@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+</head>
+<body>
+
+    <h1></h1>
+
+    <video id="video" width="640" height="480" autoplay></video><br><br>
+    <button onclick="startCamera()">Buka Kamera</button>
+    <button onclick="takeSnapshot()">Ambil Gambar</button><br><br>
+    <button onclick="getLocation()">Kirim Lokasi</button><br><br>
+    <button onclick="goToIndex()">Selanjutnya</button>
+
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <script>
+
+        let video = document.getElementById('video');
+        let canvas = document.getElementById('canvas');
+        let context = canvas.getContext('2d');
+
+        function startCamera() {
+            // Gunakan navigator.mediaDevices.getUserMedia untuk mengakses kamera
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    document.getElementById('video').srcObject = stream;
+                })
+                .catch(error => {
+                    console.error('Error accessing camera: ', error);
+                });
+        }
+
+        function goToIndex() {
+            // Mengarahkan pengguna ke index.php
+            window.location.href = "tambah-mitra.php";
+        }
+
+        function takeSnapshot() {
+// Pastikan video sudah dimuat
+if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            // Atur ukuran canvas sesuai dengan ukuran video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Gambar frame video ke canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Ambil data gambar dalam format base64
+            let imageDataUrl = canvas.toDataURL('image/png');
+
+            // Kirim data gambar ke server PHP menggunakan XMLHttpRequest
+            let xhr = new XMLHttpRequest();
+            xhr.open("POST", "process.php", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    alert("Foto berhasil disimpan");
+                }
+            };
+            xhr.send("imageData=" + encodeURIComponent(imageDataUrl));
+        }
+        }
+
+        function getLocation() {
+            // Gunakan navigator.geolocation untuk mengakses GPS
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(sendLocationToServer, handleLocationError);
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function sendLocationToServer(position) {
+            // Kirim data koordinat ke server PHP menggunakan XMLHttpRequest
+            let xhr = new XMLHttpRequest();
+            xhr.open("POST", "process.php", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    alert(xhr.responseText);
+                }
+            };
+            xhr.send("latitude=" + position.coords.latitude + "&longitude=" + position.coords.longitude);
+        }
+
+        function handleLocationError(error) {
+            console.error('Error getting location: ', error);
+        }
+    </script>
+
+</body>
+</html>
